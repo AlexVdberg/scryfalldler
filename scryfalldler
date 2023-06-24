@@ -8,7 +8,7 @@ class Cli
     private $arguments;
     private $scryfall;
     private $curl;
-    
+
     public $title = "Scryfall Downloader";
     public $version = "1.4.1";
     public $description = "is a simple (fast and bad coded) php automated script for download and zip <b>card images</b> using the open scryfall.com API site ready for XMage.";
@@ -53,7 +53,7 @@ class Cli
             "short" => "g",
             "large" => "gatherer",
             "description" => "Download a set from Wizards Gatherer searched by name."
-        ),        
+        ),
         "folder" => array(
             "short" => "f",
             "large" => "folder",
@@ -115,14 +115,14 @@ class Cli
         File::cleanDir();
         $this->checkCurl();
 
-        $this->setProxy();        
+        $this->setProxy();
         $this->setSize();
         $this->setFolder();
         $this->setForce();
         $this->setDebug();
         $this->setExt();
         $this->setFile();
-        
+
         if (!$this->optionExist("no-check")) $this->checkForUpdate();
 
         if ($this->optionExist("test")) $this->scryfall->checkConnection();
@@ -329,13 +329,13 @@ class Cli
         echo $this->line(" ", "none", "none");
     }
 
-    public function end()
+    public static function end()
     {
         echo self::line(" ", "none", "none");
         die;
     }
 
-    public function line($text, $colorText = null, $colorBackground = null, $addDate = false, $breakLine = true)
+    public static function line($text, $colorText = null, $colorBackground = null, $addDate = false, $breakLine = true)
     {
         $res = null;
         if ($addDate==true) {
@@ -395,7 +395,7 @@ class Cli
 class Scryfall
 {
     private $baseUrl = "https://api.scryfall.com/";
-    public $gathererUrl = "http://gatherer.wizards.com/Handlers/Image.ashx?type=card&multiverseid=";    
+    public $gathererUrl = "http://gatherer.wizards.com/Handlers/Image.ashx?type=card&multiverseid=";
 
     public function getSets()
     {
@@ -460,7 +460,7 @@ class Scryfall
     {
         if (is_array($cards)) {
             foreach ($cards as $card) {
-                if (is_array(@$card->card_faces) and @$card->layout!="split" and @$card->layout!="adventure") {
+                if (is_array(@$card->card_faces) and @$card->layout!="split" and @$card->layout!="adventure" and @$card->layout!="flip") {
                     $pos = 0;
                     foreach ($card->card_faces as $face) {
                         $face->collector_number = $card->collector_number;
@@ -470,10 +470,10 @@ class Scryfall
                         }
                         $aux_cards[] = $face;
                     }
-                } else {                	
-                	if (!self::isMyStringIn("★", $card->collector_number)) {
-                		$aux_cards[] = $card;
-                	}                 
+                } else {
+                    if (!self::isMyStringIn("★", $card->collector_number)) {
+                        $aux_cards[] = $card;
+                    }
                 }
             }
             unset($cards);
@@ -516,6 +516,7 @@ class Scryfall
 
             $ch = Http::curl_init();
 
+            $setLog = fopen($setNameForZip.".csv", "w");
             foreach ($cards as $card) {
                 $name = $card->name;
 
@@ -535,7 +536,12 @@ class Scryfall
                     $name .= ".".$card->collector_number;
                 }
                 $name = $this->fixName($name);
-                $name .= ".full.".$ext;
+                $name .= ".full";
+
+                //fwrite($setLog, $card->collector_number.";".$name."\n");
+                fwrite($setLog, $name.";".$card->collector_number."\n");
+
+                $name .= ".".$ext;
 
                 if (!$debug) {
                     $url = null;
@@ -551,11 +557,12 @@ class Scryfall
                     }
                     $img = Http::get($url, $ch, false);
                     file_put_contents($route.$name, $img);
-                    $total++;             
+                    $total++;
                 }
                 $cual++;
                 echo Cli::line(" + Saving ".$cual."/".count($cards)." <cyan>".$name."</cyan> ", null, null, true);
             }
+            fclose($setLog);
             Http::curl_close($ch);
             if ($total==0) {
                 echo Cli::line("No cards downloaded... So no more execution to do.", "red", "none", true);
@@ -571,7 +578,7 @@ class Scryfall
                 File::zip("tmp", $destination_folder.$setNameForZip.".zip");
             }
             File::cleanDir();
-            echo Cli::line("Zip created and temporal files cleaned", "green", "none", true);            
+            echo Cli::line("Zip created and temporal files cleaned", "green", "none", true);
             echo Cli::line("<b>Process ends OK! ☺☺☺ </b> ", "green", "magenta", true);
         }
     }
@@ -597,7 +604,7 @@ class Scryfall
         }
         return false;
     }
-    
+
     public function checkConnection()
     {
         $ch = Http::curl_init();
@@ -629,7 +636,7 @@ class Scryfall
                         $res = array_merge($res, $aux);
                     }
                     $times++;
-                }                    
+                }
                 Http::curl_close($ch);
                 return $res;
             }
@@ -646,7 +653,7 @@ class Scryfall
                 $i = 0;
                 foreach ($data as $line) {
                     $set = null;
-                    $cn = null;             
+                    $cn = null;
 
                     $aux = null;
                     $aux = explode(":", $line);
@@ -677,7 +684,7 @@ class Scryfall
                             } else {
                                 $set = $aux[count($aux)-1];
                             }
-                            
+
                         }
                         $working = $aux[0];
                     }
@@ -687,7 +694,7 @@ class Scryfall
                         $working = ltrim($aux[count($aux)-1]);
 
                         $aux = str_replace("[", "", $aux[0]);
-                        
+
                         if (self::isMyStringIn(":", $aux)) {
                             $aux = explode(":", $aux);
                             $set = $aux[0];
@@ -698,7 +705,7 @@ class Scryfall
                     }
                     if ($cn) $cards[$i]['cn'] = $cn;
                     if ($set) $cards[$i]['set'] = $set;
-                    $cards[$i]['name'] = $working;                    
+                    $cards[$i]['name'] = $working;
                     $i++;
                 }
 
@@ -812,7 +819,7 @@ class WizardsSite
                 unset($cards);
                 $cards = $this->multi_unique($gCards);
                 return $cards;
-            }            
+            }
         }
         return $cards;
     }
@@ -949,7 +956,7 @@ class WizardsSite
             $cual = 1;
             $total = 0;
             foreach ($cards as $card) {
-                $name = null;                
+                $name = null;
                 $img = Http::get($card['url'], $ch, false);
                 $landNaming = null;
                 $numbering = null;
@@ -963,7 +970,7 @@ class WizardsSite
                 }
                 $name = $card['name'].$landNaming.".full.".$ext;
 
-                echo Cli::line(" + Saving ".$cual."/".$total_array." <cyan>".$name."</cyan> ", null, null, true);   
+                echo Cli::line(" + Saving ".$cual."/".$total_array." <cyan>".$name."</cyan> ", null, null, true);
                 file_put_contents($route.$name, $img);
                 $cual++;
                 $total++;
@@ -986,8 +993,8 @@ class WizardsSite
             }
             File::cleanDir();
 
-            echo Cli::line("Zip created and temporal files cleaned", "green", "none", true);            
-            echo Cli::line("<b>Process ends OK! ☺☺☺ </b> ", "green", "magenta", true);            
+            echo Cli::line("Zip created and temporal files cleaned", "green", "none", true);
+            echo Cli::line("<b>Process ends OK! ☺☺☺ </b> ", "green", "magenta", true);
             return true;
         }
         return false;
@@ -1072,7 +1079,7 @@ class File
         }
     }
 
-    public function zip($source, $destination)
+    public static function zip($source, $destination)
     {
         $phar = new PharData($destination);
         $phar->buildFromDirectory($source, '~[.][0-9a-z]+$~i');
@@ -1090,17 +1097,17 @@ class File
 
 class Http
 {
-    public function curl_init()
+    public static function curl_init()
     {
         return curl_init();
     }
 
-    public function curl_close($ch)
+    public static function curl_close($ch)
     {
         if ($ch) curl_close($ch);
     }
 
-    public function get($route, $ch, $json_decoded = true) {
+    public static function get($route, $ch, $json_decoded = true) {
         global $proxy;
         if (!$ch) return false;
         curl_setopt($ch, CURLOPT_HEADER, 0);
@@ -1152,7 +1159,7 @@ class Colors
         'light_gray' => '47'
     );
 
-    public function getColoredString($string, $foreground_color = null, $background_color = null) {
+    public static function getColoredString($string, $foreground_color = null, $background_color = null) {
         $colored_string = "";
 
         if (isset(self::$foreground_colors[$foreground_color])) {

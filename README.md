@@ -8,7 +8,7 @@ Use [Issues](https://github.com/nachazo/scryfalldler/issues) for feature request
 Don't forget to support [scryfall.com](http://scryfall.com).
 
 ## How to run
-You only need **php** 5.3+ (instaled in your system or uncompressed, for example from [php downloads page](http://php.net/downloads.php) or LAMP folder - note: **no** web server required, noly php) with **curl extension enabled**. Normally comes installed and enabled in most lamps or similar. If not, for Debian based GNU/Unix like Ubuntu, you simply can do it with `sudo apt install php-curl`. For Windows, search over there (could be done just editing two lines in php.ini file) :P
+You only need **php** 5.3+ (instaled in your system or uncompressed, for example from [php downloads page](http://php.net/downloads.php) or LAMP folder - note: **no** web server required, only php) with **curl extension enabled**. Normally comes installed and enabled in most lamps or similar. If not, for Debian based GNU/Unix like Ubuntu, you simply can do it with `sudo apt install php-curl`. For Windows, search over there (could be done just editing two lines in php.ini file) :P
 
 So, just execute command and place resultant zip in your XMage images folder. For tokens you can drag&drop to TOK.zip file.
 
